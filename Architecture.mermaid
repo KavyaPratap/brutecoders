@@ -1,0 +1,174 @@
+flowchart TD
+    %% --- Overall Theme Setup ---
+    %% Championship-level architecture with all hackathon requirements
+
+    subgraph Frontend ["🎯 REACT DASHBOARD (Primary Judge Interface)"]
+        direction TB
+        
+        InputSection["📝 INPUT SECTION
+        • GitHub Repository URL
+        • Team Name / Leader Name
+        • Run Agent Button"]
+        
+        RunSummary["📊 RUN SUMMARY CARD
+        • Status: PASSED/FAILED
+        • Branch: TEAM_NAME_LEADER_AI_Fix
+        • Time Taken: MM:SS"]
+        
+        ScoreBoard["🏆 SCORE BREAKDOWN
+        • Base: 100 | Speed: +10 | Efficiency: -2
+        • FINAL TOTAL: [CALCULATED]"]
+        
+        FixesTable["📋 FIXES APPLIED TABLE
+        • File | Bug Type | Line | Status"]
+        
+        Timeline["⏱️ CI/CD TIMELINE
+        • ✅/❌ per iteration (3/5)"]
+        
+        InputSection -->|API Call| API
+        API -.->|Live Updates| RunSummary
+        API -.->|Live Updates| ScoreBoard
+        API -.->|Populate| FixesTable
+        API -.->|Render| Timeline
+    end
+
+    subgraph API_Layer ["⚡ FASTAPI ORCHESTRATOR"]
+        direction TB
+        API[🔌 REST Endpoint: /run-agent]
+        BranchGen["🔧 Branch: TEAM_NAME_LEADER_AI_Fix"]
+        Timer["⏱️ Performance Timer"]
+        JSON_Gen["📦 results.json Generator"]
+        SSE["📡 Server-Sent Events"]
+        
+        API --> BranchGen
+        API --> Timer
+        API --> SSE
+        JSON_Gen --> API
+    end
+
+    subgraph Agent_Core ["🤖 THE HEALING AGENT"]
+        direction TB
+        
+        Start([🚀 START]) --> Clone[📂 Repo Cloner]
+        Clone --> Discover[🔍 Test Discovery]
+        Discover --> TestRun1[🧪 Initial Tests]
+        
+        TestRun1 -->|No Failures| FastPass[⏩ No Issues]
+        TestRun1 -->|Failures| BugClassifier
+        
+        subgraph AI_Cabinet ["🧠 GEMINI 1.5 PRO AGENTIC CABINET"]
+            direction TB
+            
+            BugClassifier["🔬 Minister of Classification
+            Output: Bug Type (LINTING/SYNTAX/LOGIC/
+                   TYPE_ERROR/IMPORT/INDENTATION)"]
+            
+            BugLocalizer["📍 Minister of Localization
+            Output: File Path + Line Number"]
+            
+            FixGenerator["🔧 Minister of Repair
+            Output: Fixed Code + [AI-AGENT] Commit"]
+            
+            Validator["⚖️ Minister of Validation
+            • Anti-Hallucination Check
+            • Format Compliance
+            • Test Case Matching"]
+            
+            %% Circuit Breaker
+            ValidationCounter["🔄 Format Attempts: 0/3"]
+            FallbackFix["🛟 FALLBACK: Template Fix"]
+            
+            BugClassifier --> BugLocalizer
+            BugLocalizer --> FixGenerator
+            FixGenerator --> Validator
+            Validator -->|❌ Invalid| ValidationCounter
+            ValidationCounter -->|< 3| FixGenerator
+            ValidationCounter -->|= 3| FallbackFix
+            FallbackFix --> Validator
+        end
+        
+        BugClassifier --> AI_Cabinet
+        Validator -->|✅ Valid| SandboxPrep
+        
+        subgraph Sandbox ["🔒 DOCKER SANDBOX"]
+            direction TB
+            ApplyFix["📝 Apply Fix"] 
+            RunTests["🧪 Run Tests"] 
+            RecordIteration["📊 Record #"]
+            CheckPass["✅ Tests Pass?"]
+            
+            ApplyFix --> RunTests
+            RunTests --> RecordIteration
+            RecordIteration --> CheckPass
+        end
+        
+        SandboxPrep["📦 Prepare Sandbox"] --> Sandbox
+        
+        CheckPass -->|❌ Failed| Retry{<5?}
+        Retry -->|Yes| BugClassifier
+        Retry -->|No| MarkFailed[❌ FAILED]
+        CheckPass -->|✅ Passed| PostProcessor
+    end
+
+    subgraph Post_Processing ["✨ POST-PROCESSOR"]
+        direction TB
+        Format["🔧 Code Formatter"]
+        FixesDB["💾 Store Fix Record"]
+        CommitCount["📈 Track Commit Counter"]
+        
+        Format --> FixesDB
+        FixesDB --> CommitCount
+    end
+
+    subgraph Git_Ops ["🐙 GIT OPS"]
+        direction TB
+        GitCommit["📤 Commit: [AI-AGENT] prefix"]
+        GitPush["📌 Push: TEAM_NAME_LEADER_AI_Fix"]
+        
+        GitCommit --> GitPush
+    end
+
+    subgraph Scoring ["📊 SCORING"]
+        direction TB
+        CalcBase["Base: 100"]
+        CalcSpeed["Speed Bonus: +10"]
+        CalcEfficiency["Penalty: -2 per commit >20"]
+        FinalScore["🏆 FINAL SCORE"]
+        
+        CalcBase --> CalcSpeed
+        CalcSpeed --> CalcEfficiency
+        CalcEfficiency --> FinalScore
+    end
+
+    %% CONNECTIONS
+    PostProcessor --> GitCommit
+    GitPush --> MarkPass[✅ PASSED]
+    
+    MarkPass --> JSON_Gen
+    MarkFailed --> JSON_Gen
+    
+    JSON_Gen --> FinalScore
+    FinalScore --> API
+    
+    Timer --> CalcSpeed
+    CommitCount --> CalcEfficiency
+    API -.->|Update| Frontend
+
+    %% --- STYLING - CLEAN AND NON-OVERLAPPING ---
+    classDef dashboard fill:#0A2472,stroke:#00FFFF,color:#FFFFFF,rx:5
+    classDef api fill:#2D1B4E,stroke:#FFD700,color:#FFFFFF,rx:5
+    classDef ai fill:#FF1493,stroke:#FFFFFF,color:#FFFFFF,rx:8
+    classDef breaker fill:#FFD700,stroke:#FF0000,color:#000000,rx:8
+    classDef sandbox fill:#00A36C,stroke:#39FF14,color:#FFFFFF,rx:0
+    classDef git fill:#FF8C00,stroke:#FFFFFF,color:#FFFFFF,rx:5
+    classDef scoring fill:#4A2C00,stroke:#FFD700,color:#FFD700,rx:5
+    classDef results fill:#006400,stroke:#00FF00,color:#FFFFFF,rx:5
+
+    class InputSection,RunSummary,ScoreBoard,FixesTable,Timeline dashboard
+    class API,BranchGen,Timer,JSON_Gen,SSE api
+    class BugClassifier,BugLocalizer,FixGenerator,Validator ai
+    class ValidationCounter,FallbackFix breaker
+    class ApplyFix,RunTests,RecordIteration,CheckPass sandbox
+    class GitCommit,GitPush git
+    class CalcBase,CalcSpeed,CalcEfficiency,FinalScore scoring
+    class MarkPass,MarkFailed,Start,JSON_Gen results
